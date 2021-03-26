@@ -7,7 +7,7 @@ function threshold=compute_threshold(base_data, exp_data, all_base_times,...
 %
 % Syntax:  threshold = compute_threshold(base_data, exp_data,...
 %                          all_base_times, all_exp_times, srate, foi,...
-%                          woi, thresh_sd, 'plot', true)
+%                          woi, thresh_sd)
 %
 % Inputs:
 %    base_data - baseline trial data (time x trials)
@@ -21,20 +21,13 @@ function threshold=compute_threshold(base_data, exp_data, all_base_times,...
 %    thresh_sd - number of standard deviations above the median amplitude
 %        to set the threshold at 
 %
-% Optional keyword inputs:
-%     plot - whether or not to plot the raw, filtered, and amplitude data
-%        for the first trial (default = false)
-%
 % Outputs:
 %    threshold - absolute threshold for defining burst - median +
 %        thresh_sd*std dev of amplitude in all time points / trials
 %
 % Example: 
 %   threshold = compute_threshold(base_data, exp_data, all_base_times,...
-%                   all_exp_times, 250, [13 30], [-1000 1000], 1.5,...
-%                   'plot', true)
-
-% dbstop if error
+%                   all_exp_times, 250, [13 30], [-1000 1000], 1.5)
 
 % Parse optional arguments
 defaults=struct('plot', false);
@@ -46,48 +39,17 @@ for f=fieldnames(defaults)',
 end
 
 % Get amplitude using the filter-Hilbert method
-[filt_base_data, amp_base_data]=filter_hilbert(base_data, srate, foi);
-[filt_exp_data, amp_exp_data]=filter_hilbert(exp_data, srate, foi);
+[~, amp_base_data]=filter_hilbert(base_data, srate, foi);
+[~, amp_exp_data]=filter_hilbert(exp_data, srate, foi);
 
-% Cut off edges to remove edge artifacts
+% Cut off edges to remove filter artifacts
 base_woi_idx=knnsearch(all_base_times',woi');
-all_base_times=all_base_times(base_woi_idx(1):base_woi_idx(2));
-base_data=base_data(base_woi_idx(1):base_woi_idx(2),:);
-filt_base_data=filt_base_data(base_woi_idx(1):base_woi_idx(2),:);
 amp_base_data=amp_base_data(base_woi_idx(1):base_woi_idx(2),:);
 
-% Cut off edges to remove edge artifacts
+% Cut off edges to remove filter artifacts
 exp_woi_idx=knnsearch(all_exp_times',woi');
-all_exp_times=all_exp_times(exp_woi_idx(1):exp_woi_idx(2));
-exp_data=exp_data(base_woi_idx(1):base_woi_idx(2),:);
-filt_exp_data=filt_exp_data(exp_woi_idx(1):exp_woi_idx(2),:);
 amp_exp_data=amp_exp_data(exp_woi_idx(1):exp_woi_idx(2),:);
 
 % Compute threshold
 amp_all_data=[amp_base_data amp_exp_data];
 threshold=median(amp_all_data(:))+(thresh_sd*std(amp_all_data(:)));
-
-% Plot first trial
-if params.plot
-    figure();
-    subplot(2,1,1);
-    hold all;
-    plot(all_base_times,base_data(:,1));
-    plot(all_base_times,filt_base_data(:,1));
-    plot(all_base_times,amp_base_data(:,1));
-    plot(all_exp_times([1 end]),[threshold threshold],'k--');
-    xlim(woi);
-    legend('raw','filtered','amplitude','threshold');
-    xlabel('Time (ms)');
-    ylabel('Potential \muV');
-    
-    subplot(2,1,2);
-    hold all;
-    plot(all_exp_times,exp_data(:,1))
-    plot(all_base_times,filt_exp_data(:,1));    
-    plot(all_exp_times,amp_exp_data(:,1));
-    plot(all_exp_times([1 end]),[threshold threshold],'k--');
-    xlim(woi);
-    xlabel('Time (ms)');
-    ylabel('Potential \muV');
-end
