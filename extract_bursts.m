@@ -31,8 +31,6 @@ function bursts=extract_bursts(data, all_times, srate, foi, threshold,...
 %   bursts = extract_bursts(exp_data, all_exp_times, 250, [13 30], threshold,...
 %                   'burst_window', 100)
 
-%dbstop if error
-
 % Parse optional arguments
 defaults=struct('burst_window',100);
 params=struct(varargin{:});
@@ -41,7 +39,6 @@ for f=fieldnames(defaults)',
         params.(f{1})=defaults.(f{1});
     end
 end
-
 
 % Get amplitude
 [~, amp_data]=filter_hilbert(data, srate, foi);
@@ -61,8 +58,9 @@ bursts.peak_amp=[];
 bursts.waveform=[];
 
 % Compute time steps for burst waveform
-n_burst_times=params.burst_window/1000*srate;    
-bursts.times=linspace(-.5*params.burst_window,.5*params.burst_window,n_burst_times+1);
+n_burst_times=round(params.burst_window/1000*srate);    
+bursts.times=linspace(-.5*params.burst_window,.5*params.burst_window,...
+    n_burst_times+1);
 
 % Go through signal each trial 
 for t_idx=1:size(data,2)
@@ -103,8 +101,8 @@ for t_idx=1:size(data,2)
             % Only save burst waveform if not cut off by the start or end
             % of the trial
             waveform=zeros(1,n_burst_times+1).*NaN;
-            l_idx=burst_peak_idx-n_burst_times/2;
-            r_idx=burst_peak_idx+n_burst_times/2;
+            l_idx=burst_peak_idx-floor(n_burst_times/2);
+            r_idx=burst_peak_idx+ceil(n_burst_times/2);
             if l_idx>0 && r_idx<=length(all_times)
                 waveform=data(l_idx:r_idx,t_idx);        
             end
