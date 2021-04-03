@@ -8,6 +8,7 @@ Analysis code for analyzing frequency-specific transient burst events in develop
 
 ## Requirements:
 
+* MatLab2015b
 * EEGlab v14.1.1: https://sccn.ucsd.edu/eeglab/index.php
 * FieldTrip v20190329: https://www.fieldtriptoolbox.org/
 * shadedErrorBar: https://fr.mathworks.com/matlabcentral/fileexchange/26311-raacampbell-shadederrorbar?
