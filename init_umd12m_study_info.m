@@ -27,7 +27,7 @@ study_info.beta_thresh_sd=1.25;
 study_info.mu_band=[6 10];
 
 % Open EEGlab
-%[ALLEEG, EEG, CURRENTSET] = eeglab;
+[ALLEEG, EEG, CURRENTSET] = eeglab;
 
 % Init fieldtrip
-%ft_defaults;
+ft_defaults;
