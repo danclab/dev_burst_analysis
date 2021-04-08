@@ -1,8 +1,7 @@
 function data=create_ft_data(clusters, cluster_data, times, srate)
 % CREATE_FT_DATA - Create data structure for fieldtrip from cluster data
-% and EEGlab data
 %
-% Syntax:  data=create_ft_data(clusters, cluster_data, EEG)
+% Syntax:  data=create_ft_data(clusters, cluster_data, times, srate)
 %
 % Inputs:
 %    clusters - cell array of cluster names
