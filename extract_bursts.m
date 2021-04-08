@@ -3,8 +3,7 @@ function bursts=extract_bursts(data, all_times, srate, foi, threshold,...
 % EXTRACT_BURSTS - Extracts burst from the data as amplitude within a
 % frequency band exceeding a threshold
 %
-% Syntax:  bursts = extract_bursts(data, all_times, srate, foi,...
-%                          threshold, 'burst_window', 100)
+% Syntax:  bursts = extract_bursts(data, all_times, srate, foi, threshold);
 %
 % Inputs:
 %    data - trial data (time x trials)
@@ -13,26 +12,18 @@ function bursts=extract_bursts(data, all_times, srate, foi, threshold,...
 %    foi - frequency band of interest ([low high], Hz)
 %    threshold - amplitude threshold
 %
-% Optional keyword inputs:
-%     burst_window - width of time window around burst to extract waveform
-%         (ms; default = 100)
-%
 % Outputs:
 %    bursts - structure containing data for each burst:
 %        trial - trial burst occurred in
 %        peak_time - time of burst peak (ms)
 %        onset_time - onset of burst (ms)
 %        offset_time - offset of burst (ms)
-%        waveform - burst waveform (NaN if burst occurs too close to start
-%            or end of trial)
-%        times - waveform timestamps (ms)
 %
 % Example: 
-%   bursts = extract_bursts(exp_data, all_exp_times, 250, [13 30], threshold,...
-%                   'burst_window', 100)
+%   bursts = extract_bursts(exp_data, all_exp_times, 250, [13 30], threshold);
 
 % Parse optional arguments
-defaults=struct('burst_window',100);
+defaults=struct();
 params=struct(varargin{:});
 for f=fieldnames(defaults)',
     if ~isfield(params, f{1})
@@ -54,13 +45,6 @@ bursts.onset_time=[];
 bursts.offset_time=[];
 % Burst peak amplitude
 bursts.peak_amp=[];
-% Waveform of each burst
-bursts.waveform=[];
-
-% Compute time steps for burst waveform
-n_burst_times=round(params.burst_window/1000*srate);    
-bursts.times=linspace(-.5*params.burst_window,.5*params.burst_window,...
-    n_burst_times+1);
 
 % Go through signal each trial 
 for t_idx=1:size(data,2)
@@ -96,17 +80,7 @@ for t_idx=1:size(data,2)
             bursts.peak_time(end+1)=all_times(burst_peak_idx);
             bursts.onset_time(end+1)=all_times(burst_start_idx);
             bursts.offset_time(end+1)=all_times(burst_end_idx);
-            bursts.peak_amp(end+1)=max_burst_amp;
-            
-            % Only save burst waveform if not cut off by the start or end
-            % of the trial
-            waveform=zeros(1,n_burst_times+1).*NaN;
-            l_idx=burst_peak_idx-floor(n_burst_times/2);
-            r_idx=burst_peak_idx+ceil(n_burst_times/2);
-            if l_idx>0 && r_idx<=length(all_times)
-                waveform=data(l_idx:r_idx,t_idx);        
-            end
-            bursts.waveform(end+1,:)=waveform;
+            bursts.peak_amp(end+1)=max_burst_amp;                        
         end
     end
 end
