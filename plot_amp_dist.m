@@ -61,22 +61,16 @@ for s=1:n_subjects
             all_base_times=base_EEG.times;
             all_exp_times=exp_EEG.times;
 
+            % Data averaged within each cluster
+            base_cluster_data=get_cluster_data(study_info, base_EEG);                        
+            exp_cluster_data=get_cluster_data(study_info, exp_EEG);
+            
             % Process each cluster
             for c_idx=1:length(study_info.clusters)
-
-                % Channels in this cluster
-                channels=study_info.cluster_channels{c_idx};
-
-                % Find indices of cluster channels
-                chan_idx=zeros(1,length(channels));
-                for k=1:length(channels)
-                    chan_idx(k)=find(strcmp({exp_EEG.chanlocs.labels},...
-                        channels{k}));
-                end                       
-
-                % Average over channels in cluster
-                base_data=double(squeeze(mean(base_EEG.data(chan_idx,:,:),1)));
-                exp_data=double(squeeze(mean(exp_EEG.data(chan_idx,:,:),1)));
+                
+                % Data for this cluster
+                base_data=squeeze(base_cluster_data(c_idx,:,:));
+                exp_data=squeeze(exp_cluster_data(c_idx,:,:));
 
                 % Get amplitude
                 [~, amp_base]=filter_hilbert(base_data, base_EEG.srate, foi);        

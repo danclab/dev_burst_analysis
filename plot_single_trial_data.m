@@ -23,17 +23,14 @@ all_exp_times=exp_EEG.times;
 % Sampling rate
 srate=base_EEG.srate;
 
-% Find indices of cluster channels
-cluster_channels=study_info.cluster_channnels{1};
-chan_idx=zeros(1,length(cluster_channels));
-for k=1:length(cluster_channels)
-    chan_idx(k)=find(strcmp({exp_EEG.chanlocs.labels},cluster_channels{k}));
-end                       
+% Data averaged within each cluster
+base_cluster_data=get_cluster_data(study_info, base_EEG);                        
+exp_cluster_data=get_cluster_data(study_info, exp_EEG);
+            
+% C3 cluster data
+base_data=squeeze(base_cluster_data(1,:,:));
+exp_data=squeeze(exp_cluster_data(1,:,:));
 
-% Average over channels in cluster
-base_data=double(squeeze(mean(base_EEG.data(chan_idx,:,:),1)));
-exp_data=double(squeeze(mean(exp_EEG.data(chan_idx,:,:),1)));
-                
 % Get amplitude using the filter-Hilbert method
 [filt_base_beta_data, amp_base_beta_data]=filter_hilbert(base_data, srate,...
     study_info.beta_band);

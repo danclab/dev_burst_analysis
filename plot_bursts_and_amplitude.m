@@ -1,6 +1,7 @@
 function plot_bursts_and_amplitude(study_info, foi, thresh_sd, varargin)
 % PLOT_BURSTS_AND_AMPLITUDE - Plot distribution of burst timing and
 % amplitude time course within frequency band in the C3 and C4 clusters
+% during the execution condition
 %
 % Syntax:  plot_bursts_and_amplitude(study_info, foi, thresh_sd)
 %
@@ -22,6 +23,7 @@ for f=fieldnames(defaults)',
     end
 end
 
+% Plot execute condition
 condition='execute';
 cond_idx=find(strcmp(study_info.conditions,condition));
 base_event=study_info.baseline_evts{cond_idx};
@@ -34,9 +36,9 @@ woi=[-1250 1250];
 n_subjects=size(study_info.participant_info,1);
 
 all_subj_base_bursts=struct('trial',{},'peak_time',{},'onset_time',{},...
-    'offset_time',{},'peak_amp',{},'waveform',{},'times',{});
+    'offset_time',{},'peak_amp',{});
 all_subj_exp_bursts=struct('trial',{},'peak_time',{},'onset_time',{},...
-    'offset_time',{},'peak_amp',{},'waveform',{},'times',{});
+    'offset_time',{},'peak_amp',{});
 
 % Baseline mean amplitude for each subject in each cluster
 subj_amp_base=[];
@@ -84,30 +86,21 @@ for s=1:n_subjects
         if ntrials_base(s)>=params.min_ntrials &&...
                 ntrials_exp(s)>=params.min_ntrials
         
+            % Data averaged within each cluster
+            base_cluster_data=get_cluster_data(study_info, base_EEG);                        
+            exp_cluster_data=get_cluster_data(study_info, exp_EEG);
+            
             % Process each cluster
             for c_idx=1:length(study_info.clusters)
-
-                % Channels in this cluster
-                channels=study_info.cluster_channels{c_idx};
-
-                % Find indices of cluster channels
-                chan_idx=zeros(1,length(channels));
-                for k=1:length(channels)
-                    chan_idx(k)=find(strcmp({exp_EEG.chanlocs.labels},...
-                        channels{k}));
-                end                       
-
-                % Average over channels in cluster
-                base_data=double(squeeze(mean(base_EEG.data(chan_idx,:,:),1)));
-                exp_data=double(squeeze(mean(exp_EEG.data(chan_idx,:,:),1)));
+                
+                % Data for this cluster - execution condition
+                base_data=squeeze(base_cluster_data(c_idx,:,base_trials));
+                exp_data=squeeze(exp_cluster_data(c_idx,:,exp_trials));
 
                 % Compute burst threshold
                 threshold=compute_threshold(base_data, exp_data,...
                     all_base_times, all_exp_times, base_EEG.srate, foi,...
                     woi, thresh_sd);
-                
-                base_data=base_data(:,base_trials);
-                exp_data=exp_data(:,exp_trials);
                 
                 % Extract bursts
                 subj_base_bursts=extract_bursts(base_data, all_base_times,...

@@ -58,25 +58,8 @@ for s=1:1:n_subjects
             merged_EEG=pop_mergeset(ALLEEG,1:2,0);
 
             % Data averaged within each cluster
-            cluster_data=zeros(length(study_info.clusters), merged_EEG.pnts,...
-                merged_EEG.trials);
-
-            for c_idx=1:length(study_info.clusters)
-
-                % Channels in this cluster
-                channels=study_info.cluster_channels{c_idx};
-
-                % Find indices of cluster channels
-                chan_idx=zeros(1,length(channels));
-                for k=1:length(channels)
-                    chan_idx(k)=find(strcmp({merged_EEG.chanlocs.labels},...
-                        channels{k}));
-                end    
-
-                % Average over channels in this cluster
-                cluster_data(c_idx,:,:)=double(squeeze(mean(merged_EEG.data(chan_idx,:,:),1)));
-            end
-
+            cluster_data=get_cluster_data(study_info, merged_EEG);                        
+            
             % Use a window size of twice the sampling rate with a 50%
             % overlap
             winsize=merged_EEG.srate*2;

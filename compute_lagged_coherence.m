@@ -32,6 +32,8 @@ n_subjects=size(study_info.participant_info,1);
 % Open EEGlab
 [ALLEEG, EEG, CURRENTSET] = eeglab;
 
+% Lagged coherence for each subject in each cluster over all frequencies
+% and lags
 lagged_coh=zeros(n_subjects,length(study_info.clusters),length(foi),length(lags)).*NaN;
 
 for s=1:n_subjects
@@ -65,34 +67,18 @@ for s=1:n_subjects
             merged_EEG=pop_mergeset(ALLEEG,1:2,0);
 
             % Data averaged within each cluster
-            cluster_data=zeros(length(study_info.clusters), merged_EEG.pnts,...
-                merged_EEG.trials);
-
-            for c_idx=1:length(study_info.clusters)
-
-                % Channels in this cluster
-                channels=study_info.cluster_channels{c_idx};
-
-                % Find indices of cluster channels
-                chan_idx=zeros(1,length(channels));
-                for k=1:length(channels)
-                    chan_idx(k)=find(strcmp({merged_EEG.chanlocs.labels},channels{k}));
-                end    
-
-                % Average over channels in this cluster
-                cluster_data(c_idx,:,:)=double(squeeze(mean(merged_EEG.data(chan_idx,:,:),1)));
-            end
+            cluster_data=get_cluster_data(study_info, merged_EEG);                        
 
             % Create fieldtrip data structure
-            data=create_ft_data(study_info.clusters, cluster_data, merged_EEG.times,...
-                merged_EEG.srate);
-
+            data=create_ft_data(study_info.clusters, cluster_data,...
+                merged_EEG.times, merged_EEG.srate);
             
             % Configuration for frequency analysis
             cfg_F             = [];
             cfg_F.method      = 'wavelet';  % using Morlet wavelets
             cfg_F.output      = 'fourier';  % return the complex Fourier-
-                                            % spectra because we need the phase
+                                            % spectra because we need 
+                                            % the phase
             cfg_F.keeptrials  = 'yes';      % return individual trials
             cfg_F.pad         = 'nextpow2'; % data padding
 
@@ -117,12 +103,14 @@ for s=1:n_subjects
                     width         = cfg_F.width/cfg_F.foi;
                     % width of time windows for phase comparison (data points)
                     width_pts     = merged_EEG.srate*width;
+                    % half width of time window (seconds)
+                    halfwidth     = ceil(width_pts/2)/merged_EEG.srate;
                     % Step size
                     step          = cfg_LC.lag/cfg_F.foi;
                     % Go from half window width after trial start to half window
                     % width before trial end
-                    toi_start     = data.time{1}(1) + ceil(width_pts/2)/merged_EEG.srate;
-                    toi_stop      = data.time{1}(end) - ceil(width_pts/2)/merged_EEG.srate;
+                    toi_start     = data.time{1}(1) + halfwidth;
+                    toi_stop      = data.time{1}(end) - halfwidth;
                     cfg_F.toi     = toi_start:step:toi_stop;
 
                     % Run frequency analysis
