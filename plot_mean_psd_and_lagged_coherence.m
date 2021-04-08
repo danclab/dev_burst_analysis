@@ -62,15 +62,11 @@ grandse_mean_spectra=nanstd(subj_psd_resids,[],2)./sqrt(n_subjects);
 min_mean_spectra=min(grand_mean_spectra(:)+grandse_mean_spectra(:));
 max_mean_spectra=max(grand_mean_spectra(:)+grandse_mean_spectra(:));
 
-% mu_idx=knnsearch(foi',study_info.mu_band');
-% beta_idx=knnsearch(foi',study_info.beta_band');
-    
 % Plot mean and std error of spectra in each cluster from 1 to 40Hz
 figure();
 hold all;
 for c_idx=1:length(study_info.clusters)
 
-    %subplot(length(study_info.clusters)*2,3,[1+(c_idx-1)*6 4+(c_idx-1)*6]);
     subplot(length(study_info.clusters),3,1+(c_idx-1)*3);
     % Average over subjects
     mean_spectra=squeeze(nanmean(subj_psd_resids(c_idx,:,:),2));
@@ -90,7 +86,8 @@ for c_idx=1:length(study_info.clusters)
     % Plot lagged coherence at 4 cycles
     axes(ax(2));
     hold all;
-    shadedErrorBar(foi,mean_lagged_coh2,stderr_lagged_coh2,'LineProps',{'color',[255 129 112]/255});
+    shadedErrorBar(foi,mean_lagged_coh2,stderr_lagged_coh2,'LineProps',...
+        {'color',[255 129 112]/255});
     
     % Plot beta band limits
     plot(study_info.beta_band([1 1]),[0 max_mean_lagged_coh],'k--');
@@ -103,7 +100,6 @@ for c_idx=1:length(study_info.clusters)
         
     
     % Plot mean lagged coherence
-    %subplot(length(study_info.clusters)*2,3,[2+(c_idx-1)*6 3+(c_idx-1)*6]);
     subplot(length(study_info.clusters),3,[2+(c_idx-1)*3 3+(c_idx-1)*3]);
     contourf(lags,foi,squeeze(nanmean(lagged_coh(:,c_idx,:,:))),100,...
         'linecolor','none');    
@@ -112,18 +108,6 @@ for c_idx=1:length(study_info.clusters)
     colorbar();
     set(gca,'position',pos);
     ylabel('Frequency (Hz)');
-    
-    % Plot mu and beta lagged coherence
-%     subplot(length(study_info.clusters)*2,3,[5+(c_idx-1)*6 6+(c_idx-1)*6]);
-%     hold all;
-%     mean_mu_lagged_coh=squeeze(nanmean(nanmean(lagged_coh(:,c_idx,mu_idx(1):mu_idx(2),:),3),1));
-%     stderr_mu_lagged_coh=squeeze(nanstd(nanmean(lagged_coh(:,c_idx,mu_idx(1):mu_idx(2),:),3),1)/sqrt(n_subjects));
-%     shadedErrorBar(lags,mean_mu_lagged_coh,stderr_mu_lagged_coh,'LineProps',{'color','r'});
-%     mean_beta_lagged_coh=squeeze(nanmean(nanmean(lagged_coh(:,c_idx,beta_idx(1):beta_idx(2),:),3),1));
-%     stderr_std_lagged_coh=squeeze(nanstd(nanmean(lagged_coh(:,c_idx,beta_idx(1):beta_idx(2),:),3),1)/sqrt(n_subjects));
-%     shadedErrorBar(lags,mean_beta_lagged_coh,stderr_std_lagged_coh,'LineProps',{'color','b'});
-%     legend('mu','beta');
-%     ylabel('Lagged coherence');
     xlabel('Lag (cycles)');
 
 
