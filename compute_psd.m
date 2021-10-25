@@ -1,5 +1,6 @@
 function compute_psd(study_info, varargin)
-% COMPUTE_PSD - Compute power spectrial density in the C3 and C4 clusters
+% COMPUTE_PSD - Compute power spectral density in all channels and remove
+% aperiodic component
 %
 % Syntax:  compute_psd(study_info, varargin)
 %
@@ -21,13 +22,17 @@ end
 % Open EEGlab
 [ALLEEG, EEG, CURRENTSET] = eeglab;
 
-% Power spectra for each subject in each cluster
+% Power spectra for each subject in each channel
 spectra=[];
+% Periodic spectra for each subject in each channel
+periodic=[];
+% Subjects included
+subjects={};
 
 % Number of subjects
 n_subjects=size(study_info.participant_info,1);
 
-for s=1:1:n_subjects
+for s=1:n_subjects
     
     % Get subject ID from study info
     subj_id=study_info.participant_info.participant_id{s};
@@ -57,23 +62,40 @@ for s=1:1:n_subjects
             % Merge baseline and experimental EEG data
             merged_EEG=pop_mergeset(ALLEEG,1:2,0);
 
-            % Data averaged within each cluster
-            cluster_data=get_cluster_data(study_info, merged_EEG);                        
-            
-            % Use a window size of twice the sampling rate with a 50%
-            % overlap
-            winsize=merged_EEG.srate*2;
+            % Use a window size (in datapoints) equal to the sampling rate
+            % (so 1s) with a 50% overlap
+            winsize=merged_EEG.srate;
             overlap=round(winsize/2);
 
-            % Compute power spectral density for each cluster using Welch's
+            % Compute power spectral density for each channel using Welch's
             % method
-            [subj_spectra,frex,~,~,~] = spectopo(cluster_data,...
+            [subj_spectra,frex,~,~,~] = spectopo(merged_EEG.data,...
                 merged_EEG.pnts, merged_EEG.srate, 'winsize', winsize,...
-                'overlap', overlap, 'plot', 'off');
+                'overlap', overlap, 'plot', 'off', 'freqfac',2);
 
+            % Get frequencies from 0.5 to 40
+            freq_idx=find((frex>=0.5) & (frex<=40));
+            frex=frex(freq_idx);
+            subj_spectra=subj_spectra(:,freq_idx);
+
+            ch_resids=zeros(size(subj_spectra));
+            for i=1:size(subj_spectra,1)
+                % Channel spectrum
+                chan_psd=subj_spectra(i,:);
+                % 1/f
+                oof=log10(1./frex);
+                % Fit 1/f to spectrum
+                lm_psd=fitlm(oof,chan_psd,'RobustOpts','on');
+                % Get residuals
+                ch_resids(i,:)=lm_psd.Residuals.Raw;                
+            end
+            
             spectra(end+1,:,:)=subj_spectra;    
+            periodic(end+1,:,:)=ch_resids;
+            subjects{end+1}=subj_id;
         end
     end
 end
 
-save(fullfile(study_info.deriv_dir,'psd.mat'),'frex','spectra');
+save(fullfile(study_info.deriv_dir,'psd.mat'),'frex','spectra',...
+    'periodic','subjects');
