@@ -7,7 +7,7 @@ function [filtered_data, amp]=filter_hilbert(data, srate, foi)
 % Inputs:
 %    data - trial data (time x trials)
 %    srate - sampling rate (Hz)
-%    foi - frequency band of interest ([low high], Hz)
+%    foi    - frequency band of interest ([low high], Hz)
 %
 % Outputs:
 %    filtered_data - bandpass-filtered data in the frequency range (time x
@@ -22,7 +22,7 @@ function [filtered_data, amp]=filter_hilbert(data, srate, foi)
 dc=mean(data);
 % Pad with 1s on either side
 padded_data=[repmat(dc, srate, 1); data; repmat(dc, srate, 1)];
-
+    
 % Bandpass filter in frequency range
 % 6th order two-pass Butterworth filter
 % reduce order in case of instability
