@@ -1,6 +1,6 @@
 function compute_lagged_coherence(study_info, varargin)
-% COMPUTE_LAGGED_COHERENCE - Computes lagged coherence in the C3 and C4 
-% clusters across a range of frequencies and lags
+% COMPUTE_LAGGED_COHERENCE - Computes lagged coherence in all channels
+% across a range of frequencies and lags
 %
 % Syntax:  compute_lagged_coherence(study_info)
 %
@@ -32,9 +32,9 @@ n_subjects=size(study_info.participant_info,1);
 % Open EEGlab
 [ALLEEG, EEG, CURRENTSET] = eeglab;
 
-% Lagged coherence for each subject in each cluster over all frequencies
-% and lags
-lagged_coh=zeros(n_subjects,length(study_info.clusters),length(foi),length(lags)).*NaN;
+% Lagged coherence for each subject in each channel (64) over all
+% frequencies and lags
+lagged_coh=zeros(n_subjects,64,length(foi),length(lags)).*NaN;
 
 for s=1:n_subjects
     
@@ -66,62 +66,61 @@ for s=1:n_subjects
             % Merge baseline and experimental EEG data
             merged_EEG=pop_mergeset(ALLEEG,1:2,0);
 
-            % Data averaged within each cluster
-            cluster_data=get_cluster_data(study_info, merged_EEG);                        
-
             % Create fieldtrip data structure
-            data=create_ft_data(study_info.clusters, cluster_data,...
-                merged_EEG.times, merged_EEG.srate);
+            data=create_ft_data(merged_EEG);
             
             % Configuration for frequency analysis
             cfg_F             = [];
-            cfg_F.method      = 'wavelet';  % using Morlet wavelets
-            cfg_F.output      = 'fourier';  % return the complex Fourier-
-                                            % spectra because we need 
-                                            % the phase
-            cfg_F.keeptrials  = 'yes';      % return individual trials
-            cfg_F.pad         = 'nextpow2'; % data padding
-
+            cfg_F.method      = 'mtmconvol';
+            cfg_F.taper       = 'hanning';
+            cfg_F.output      = 'fourier';
+            cfg_F.keeptrials  = 'yes';
+            cfg_F.pad         = 'nextpow2';
+            
             % Configuration for lagged coherence
-            cfg_LC            = [];                
-            cfg_LC.method     = 'laggedcoherence'; 
+            cfg_LC            = [];            
+            cfg_LC.method     = 'laggedcoherence';
             cfg_LC.trialsets  = 'all';
-
+            fs                = data.fsample;
+            
             for f_idx = 1:length(foi);
-
+                
                 % Set freq range
                 cfg_F.foi     = foi(f_idx);
                 cfg_LC.foi    = foi(f_idx);
-
-                % Run lagged coherence
+                
                 for l_idx=1:length(lags)
                     lag=lags(l_idx);
-                    cfg_F.width       = lag;  % number of wavelet cycles
-                    cfg_LC.lag        = lag;  % lag to look at
-                
+                    cfg_LC.lag        = lag;
+                    cfg_F.width       = lag;
+                   
                     % width of time windows for phase comparison (seconds)
-                    width         = cfg_F.width/cfg_F.foi;
-                    % width of time windows for phase comparison (data points)
-                    width_pts     = merged_EEG.srate*width;
+                    width         = cfg_F.width/cfg_F.foi;                        
+                    cfg_F.t_ftimwin = width;
+                    
                     % half width of time window (seconds)
-                    halfwidth     = ceil(width_pts/2)/merged_EEG.srate;
-                    % Step size
-                    step          = cfg_LC.lag/cfg_F.foi;
-                    % Go from half window width after trial start to half window
-                    % width before trial end
+                    halfwidth     = ceil(fs*width/2)/fs;
+
+                    % Go from half window width after trial start to half
+                    % window width before trial end
                     toi_start     = data.time{1}(1) + halfwidth;
                     toi_stop      = data.time{1}(end) - halfwidth;
+                    
+                    % Step size
+                    step          = ceil(fs*cfg_LC.lag/cfg_F.foi)/fs;
                     cfg_F.toi     = toi_start:step:toi_stop;
-
+                    
                     % Run frequency analysis
                     freqout       = ft_freqanalysis(cfg_F,data);
-                
+                    
+                    % Compute lagged coherence
                     lcoh = ft_connectivity_laggedcoherence(cfg_LC,freqout);
                     lagged_coh(s,:,f_idx,l_idx)=lcoh.laggedcoh;            
-                end        
+                end
             end    
         end
     end
+    save(fullfile(study_info.deriv_dir,'lagged_coherence.mat'),'lags',...
+        'foi','lagged_coh');
 end
 
-save(fullfile(study_info.deriv_dir,'lagged_coherence.mat'),'lags','foi','lagged_coh');
