@@ -1,6 +1,6 @@
 function plot_mean_psd(study_info, varargin)
 % PLOT_MEAN_PSD - Plot mean power spectrial density
-% in the C3 and C4 clusters
+% in all channels
 %
 % Syntax:  plot_mean_psd(study_info)
 %
