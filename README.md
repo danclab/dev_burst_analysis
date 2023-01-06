@@ -5,6 +5,7 @@ Analysis code for analyzing frequency-specific transient burst events in develop
 
 > H Rayson, R Debnath, S Alavizadeh, N Fox, PF Ferrari, JJ Bonaiuto<br>
 > **Detection and Analysis of Cortical Beta Bursts in Developmental EEG Data**<br>
+> Developmental Cognitive Neuroscience 2022, https://www.sciencedirect.com/science/article/pii/S1878929322000135
 
 ## Requirements:
 
